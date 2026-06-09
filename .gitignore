@@ -1,0 +1,10 @@
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+inputs/*.xlsx
+outputs/*.xlsx
+data/*.xlsx
+src/*.egg-info/
+*.egg-info/

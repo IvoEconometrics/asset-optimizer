@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asset-optimizer"
+version = "0.1.0"
+description = "Notebook-first scenario optimizer for portfolio and lifecycle workflows."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "openpyxl",
+    "pandas",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
