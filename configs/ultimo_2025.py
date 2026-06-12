@@ -7,14 +7,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
 
 SCENARIO_CONFIG = {
-    "horizon_years": 15,
+    "horizon_years": 60,
     "rf": 0.02,
     "assets": {
         "file": DATA_DIR / "Flags & Frictions - Ultimo 2025 - Overzicht Rendementen & Inflatie.xlsx",
         "settings": {
             "skiprows": 18,
             "nrows": 2000,
-            "usecols": "C:Q",
+            "usecols": "C:BJ",
             "header": None,
         },
         "sheets": {
@@ -40,6 +40,20 @@ SCENARIO_CONFIG = {
         "projection_years": 60,
         "tenor_years": 120,
         "sheet_template": "NOM {year}",
+        "first_sheet_year": 0,
+        "settings": {
+            "skiprows": 3,
+            "nrows": 2000,
+            "usecols": "C:DR",
+            "header": None,
+        },
+    },
+    "bei": {
+        "file": DATA_DIR / "Flags & Frictions - Ultimo 2025 - BEI.xlsx",
+        "projection_years": 60,
+        "tenor_years": 120,
+        "sheet_template": "BEI {year}",
+        "first_sheet_year": 0,
         "settings": {
             "skiprows": 3,
             "nrows": 2000,

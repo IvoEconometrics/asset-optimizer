@@ -11,6 +11,7 @@ dependencies = [
     "numpy",
     "openpyxl",
     "pandas",
+    "yfinance",
 ]
 
 [tool.setuptools.packages.find]

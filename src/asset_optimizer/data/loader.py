@@ -16,6 +16,8 @@ class ScenarioSet:
     horizon_years: int
     yields: np.ndarray | None = None
     yield_tenors: list[int] | None = None
+    bei: np.ndarray | None = None
+    bei_tenors: list[int] | None = None
 
     @property
     def m(self) -> int:
@@ -35,6 +37,12 @@ class ScenarioSet:
             return 0
         return int(len(self.yield_tenors))
 
+    @property
+    def b(self) -> int:
+        if self.bei_tenors is None:
+            return 0
+        return int(len(self.bei_tenors))
+
 
 def load_scenario_set(config: dict) -> ScenarioSet:
     """Load asset returns and optionally yield curves."""
@@ -49,12 +57,22 @@ def load_scenario_set(config: dict) -> ScenarioSet:
     else:
         yields, yield_tenors = None, None
 
+    if config["bei"].get("file"):
+        bei, bei_tenors = load_yields(config["bei"], config["horizon_years"])
+        assert bei.shape[0] == asset_returns.shape[0]
+        assert bei.shape[1] == asset_returns.shape[1]
+        assert bei.shape[2] == len(bei_tenors)
+    else:
+        bei, bei_tenors = None, None
+
     return ScenarioSet(
         asset_returns=asset_returns,
         asset_names=asset_names,
         horizon_years=int(config["horizon_years"]),
         yields=yields,
         yield_tenors=yield_tenors,
+        bei=bei,
+        bei_tenors=bei_tenors,
     )
 
 
@@ -104,10 +122,12 @@ def load_yields(yield_config: dict, horizon_years: int) -> tuple[np.ndarray, lis
     filepath = Path(yield_config["file"])
     settings = dict(yield_config["settings"])
     sheet_template = yield_config["sheet_template"]
+    first_sheet_year = int(yield_config.get("first_sheet_year", 1))
 
     yearly_curves: list[np.ndarray] = []
 
-    for year in range(1, horizon_years + 1):
+    for offset in range(horizon_years):
+        year = first_sheet_year + offset
         sheet_name = sheet_template.format(year=year)
         try:
             df = pd.read_excel(filepath, sheet_name=sheet_name, **settings)
