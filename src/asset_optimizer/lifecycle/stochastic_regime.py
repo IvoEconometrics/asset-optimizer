@@ -6,14 +6,11 @@ import numpy as np
 import pandas as pd
 
 from asset_optimizer.data.loader import ScenarioSet
+from asset_optimizer.lifecycle.regime_signal import regime_from_rate_vs_ma, trailing_moving_average
 
 
 ASSET_COLUMNS = ["Euro_Staat", "Euro_ILBs", "Aandelen"]
 REGIMES = ["neutraal", "hoge_reele_rente", "lage_reele_rente"]
-
-LOW_REAL_RATE = 0.01
-HIGH_REAL_RATE = 0.03
-STRONG_EXPECTED_INFLATION_INCREASE = 0.01
 
 
 def load_three_regime_table(path: str | Path) -> pd.DataFrame:
@@ -44,11 +41,13 @@ def run_stochastic_regime_lifecycle(
     nominal_tenor: int = 10,
     expected_inflation_short_tenor: int = 1,
     expected_inflation_long_tenor: int = 10,
+    ma_window_years: int = 5,
 ) -> dict:
     """Run a simple annual lifecycle using NOM/BEI states.
 
-    State at year ``t`` comes from NOM/BEI sheet ``t``. Real capital is measured
-    against realised price inflation from the scenario set.
+    State at year ``t`` comes from NOM/BEI sheet ``t``. The regime signal compares
+    the current real-rate path against its trailing moving average. Real capital is
+    measured against realised price inflation from the scenario set.
     """
 
     assert scenario_set.yields is not None
@@ -65,11 +64,11 @@ def run_stochastic_regime_lifecycle(
     asset_indices = [scenario_set.asset_names.index(name) for name in lifecycle_assets]
     inflation_index = scenario_set.asset_names.index(inflation_name)
     nominal_10y_index = scenario_set.yield_tenors.index(nominal_tenor)
-    bei_1y_index = scenario_set.bei_tenors.index(expected_inflation_short_tenor)
     bei_10y_index = scenario_set.bei_tenors.index(expected_inflation_long_tenor)
 
     lifecycle_returns = scenario_set.asset_returns[:, :years, asset_indices]
     inflation_paths = scenario_set.asset_returns[:, :years, inflation_index]
+    real_rate_paths = scenario_set.yields[:, :years, nominal_10y_index] - scenario_set.bei[:, :years, bei_10y_index]
 
     weights_by_age_regime = {}
     min_age = int(table["age"].min())
@@ -94,27 +93,10 @@ def run_stochastic_regime_lifecycle(
 
         for scenario_index in range(scenario_set.m):
             if use_regimes:
-                nominal_10y = scenario_set.yields[scenario_index, year_index, nominal_10y_index]
-                expected_inflation_1y = scenario_set.bei[scenario_index, year_index, bei_1y_index]
-                expected_inflation_10y = scenario_set.bei[scenario_index, year_index, bei_10y_index]
-                inflation_now = (
-                    initial_inflation
-                    if year_index == 0
-                    else inflation_paths[scenario_index, year_index - 1]
-                )
-
-                real_rate_10y = nominal_10y - expected_inflation_10y
-                expected_inflation_change = expected_inflation_1y - inflation_now
-
-                if real_rate_10y >= HIGH_REAL_RATE:
-                    regime = "hoge_reele_rente"
-                elif (
-                    real_rate_10y < LOW_REAL_RATE
-                    and expected_inflation_change < STRONG_EXPECTED_INFLATION_INCREASE
-                ):
-                    regime = "lage_reele_rente"
-                else:
-                    regime = "neutraal"
+                current_real_rate = real_rate_paths[scenario_index, year_index]
+                rate_history = real_rate_paths[scenario_index, : year_index + 1]
+                rate_ma = trailing_moving_average(rate_history, ma_window_years)
+                regime = regime_from_rate_vs_ma(current_real_rate, rate_ma)
             else:
                 regime = "neutraal"
 

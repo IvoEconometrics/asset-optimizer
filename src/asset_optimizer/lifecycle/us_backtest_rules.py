@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from asset_optimizer.lifecycle.regime_signal import regime_from_rate_vs_ma
+
 
 ASSET_COLUMNS = ["Bond_Return", "ILB_Return", "Equity_Return"]
 LIFECYCLE_COLUMN_MAP = {
@@ -13,10 +15,6 @@ LIFECYCLE_COLUMN_MAP = {
     "Aandelen": "Equity_Return",
 }
 REGIMES = ["neutraal", "hoge_reele_rente", "lage_reele_rente"]
-
-LOW_RATE = 0.01
-HIGH_RATE = 0.03
-STRONG_EXPECTED_INFLATION_INCREASE = 0.01
 
 
 def load_three_regime_table(path: str | Path) -> pd.DataFrame:
@@ -36,22 +34,16 @@ def load_three_regime_table(path: str | Path) -> pd.DataFrame:
 def three_regime_lifecycle(
     previous_returns: np.ndarray,
     age: int,
-    long_interest_rate: float,
-    expected_inflation_change: float,
+    current_interest_rate: float,
+    interest_rate_ma: float,
     table: pd.DataFrame,
-    strong_expected_inflation_increase: float = STRONG_EXPECTED_INFLATION_INCREASE,
 ) -> list[float]:
-    """Select one of three lifecycle tables from rate and inflation expectations."""
+    """Select one of three lifecycle tables from the current rate and its moving average."""
 
     previous_returns = np.asarray(previous_returns, dtype=float)
     assert previous_returns.shape == (len(ASSET_COLUMNS),)
 
-    if long_interest_rate >= HIGH_RATE:
-        lifecycle = "hoge_reele_rente"
-    elif long_interest_rate < LOW_RATE and expected_inflation_change < strong_expected_inflation_increase:
-        lifecycle = "lage_reele_rente"
-    else:
-        lifecycle = "neutraal"
+    lifecycle = regime_from_rate_vs_ma(current_interest_rate, interest_rate_ma)
 
     age = min(max(age, int(table["age"].min())), int(table["age"].max()))
     row = table[(table["lifecycle"] == lifecycle) & (table["age"] == age)]

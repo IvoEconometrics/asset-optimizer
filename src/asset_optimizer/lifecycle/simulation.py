@@ -5,6 +5,7 @@ from collections.abc import Callable
 import numpy as np
 
 from asset_optimizer.data.loader import ScenarioSet
+from asset_optimizer.lifecycle.regime_signal import trailing_moving_average
 
 
 def run_lifecycle_simulation(
@@ -19,12 +20,14 @@ def run_lifecycle_simulation(
     policy: Callable[[np.ndarray, int, float, float], list[float]],
     inflation_name: str = "Inflation",
     rate_tenor: int = 10,
+    ma_window_years: int = 5,
 ):
     """
     Simulate annual rebalanced lifecycle paths in three assets.
 
     Real return is evaluated relative to the configured benchmark. That
     benchmark can be price inflation, wage inflation, or another asset series.
+    The policy receives the current interest rate and its trailing moving average.
     """
 
     # Minimaal volle mep doorrekenen, anders korter kiezen.
@@ -42,9 +45,7 @@ def run_lifecycle_simulation(
 
     asset_indices = [scenario_set.asset_names.index(name) for name in lifecycle_assets]
     benchmark_asset_index = scenario_set.asset_names.index(benchmark_name)
-    inflation_asset_index = scenario_set.asset_names.index(inflation_name)
     lifecycle_returns = scenario_set.asset_returns[:, :years, asset_indices]
-    inflation_paths = scenario_set.asset_returns[:, :years, inflation_asset_index]
 
     assert scenario_set.yields is not None
     assert scenario_set.yield_tenors is not None
@@ -57,7 +58,7 @@ def run_lifecycle_simulation(
 
     # Policy Check
     test_previous_returns = np.zeros(n_assets, dtype=float)
-    test_weights = np.asarray(policy(test_previous_returns, current_age, 0.02, 0.0), dtype=float)
+    test_weights = np.asarray(policy(test_previous_returns, current_age, 0.02, 0.02), dtype=float)
     assert test_weights.shape == (n_assets,)
 
     # Initializeer matrices en paden
@@ -80,20 +81,20 @@ def run_lifecycle_simulation(
         for scenario_index in range(m_scenarios):
             if year_index == 0:
                 previous_returns = np.zeros(n_assets, dtype=float)
-                previous_interest_rate = scenario_set.yields[scenario_index, 0, rate_tenor_index]
-                previous_inflation = 0.0
             else:
                 previous_returns = lifecycle_returns[scenario_index, year_index - 1, :]
-                previous_interest_rate = scenario_set.yields[scenario_index, year_index - 1, rate_tenor_index]
-                previous_inflation = inflation_paths[scenario_index, year_index - 1]
+
+            current_interest_rate = scenario_set.yields[scenario_index, year_index, rate_tenor_index]
+            interest_rate_history = scenario_set.yields[scenario_index, : year_index + 1, rate_tenor_index]
+            interest_rate_ma = trailing_moving_average(interest_rate_history, ma_window_years)
 
             age = current_age + year_index
             weights = np.asarray(
                 policy(
                     previous_returns,
                     age,
-                    float(previous_interest_rate),
-                    float(previous_inflation),
+                    float(current_interest_rate),
+                    float(interest_rate_ma),
                 ),
                 dtype=float,
             )
@@ -107,6 +108,5 @@ def run_lifecycle_simulation(
         real_capital_paths[:, year_index + 1] = capital / benchmark_index
 
     final_real_capital = real_capital_paths[:, -1]
-    real_returns = (final_real_capital / start_capital) ** (1.0 / years) - 1.0
 
     return final_real_capital
