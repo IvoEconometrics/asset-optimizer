@@ -6,61 +6,74 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
 
+ASSET_FILE = DATA_DIR / "Flags & Frictions - Ultimo 2025 - Overzicht Rendementen & Inflatie.xlsx"
+SWAP_FILE = DATA_DIR / "Flags & Frictions - Ultimo 2025 - Swaprente.xlsx"
+BEI_FILE = DATA_DIR / "Flags & Frictions - Ultimo 2025 - BEI.xlsx"
+
+ASSET_SETTINGS = {
+    "skiprows": 18,
+    "nrows": 2000,
+    "usecols": "C:Q",
+    "header": None,
+}
+
+ASSET_SHEETS = {
+    "Looninflatie NL": "1. Looninflatie NL",
+    "Prijsinflatie NL": "2. Prijsinflatie NL",
+    "Aandelen Opkomende Markten": "3. Rendement Aandelen Opkomende",
+    "Aandelen Wereld DC": "4. Rendement Aandelen Wereld DC",
+    "Aandelen Wereld DC Unhedged": "5. Rendement Aandelen Wereld DC",
+    "Bank Loans": "6. Rendement Bank Loans",
+    "Beursgenoteerd Vastgoed": "7. Rendement Beursgenoteerd Vas",
+    "Cash": "8. Rendement Cash",
+    "Duitse Staatsobligaties": "9. Rendement Duitse Staatsoblig",
+    "EMD HC": "10. Rendement EMD HC",
+    "EMD LC": "11. Rendement EMD LC",
+    "Euro IG Credits": "12. Rendement Euro IG Credits",
+    "Euro ILBs": "13. Rendement Euro ILBs",
+    "Euro Staatsobligaties": "14. Rendement Euro Staatsobliga",
+    "Global High Yield": "15. Rendement Global High Yield",
+    "Global IG Credits": "16. Rendement Global IG Credits",
+    "Global ILBs": "17. Rendement Global ILBs",
+    "Grondstoffen": "18. Rendement Grondstoffen",
+    "Hedge Funds": "19. Rendement Hedge Funds",
+    "Internationaal Privaat Vastgoed": "20. Rendement Internationaal Pr",
+    "Italisaanse Staatsobligaties": "21. Rendement Italisaanse Staat",
+    "Nederlandse Hypotheken": "22. Rendement Nederlandse Hypot",
+    "Privaat Infrastructuur": "23. Rendement Privaat Infrastru",
+    "Privaat Vastgoed NL": "24. Rendement Privaat Vastgoed ",
+    "Private Equity": "25. Rendement Private Equity",
+}
+
+CURVE_SETTINGS = {
+    "skiprows": 3,
+    "nrows": 2000,
+    "usecols": "C:DR",
+    "header": None,
+}
+
 SCENARIO_CONFIG = {
-    "horizon_years": 60,
+    "horizon_years": 15,
     "rf": 0.02,
     "assets": {
-        "file": DATA_DIR / "Flags & Frictions - Ultimo 2025 - Overzicht Rendementen & Inflatie.xlsx",
-        "settings": {
-            "skiprows": 18,
-            "nrows": 2000,
-            "usecols": "C:BJ",
-            "header": None,
-        },
-        "sheets": {
-            "Bank_Loans": "6. Rendement Bank Loans",
-            "Commodities": "18. Rendement Grondstoffen",
-            "EMD_HC": "10. Rendement EMD HC",
-            "Emerging_Equity": "3. Rendement Aandelen Opkomende",
-            "Aandelen": "4. Rendement Aandelen Wereld DC",
-            "Euro_ILBs": "13. Rendement Euro ILBs",
-            "Euro_Staat": "14. Rendement Euro Staatsobliga",
-            "Global_HY": "15. Rendement Global High Yield",
-            "Global_IG_Credits": "16. Rendement Global IG Credits",
-            "Hedge_Funds": "19. Rendement Hedge Funds",
-            "Inflatie": "2. Prijsinflatie NL",
-            "NL_Mortgages": "22. Rendement Nederlandse Hypot",
-            "Private_Equity": "25. Rendement Private Equity",
-            "Private_Infrastructure": "23. Rendement Privaat Infrastru",
-            "Private_Real_Estate": "24. Rendement Privaat Vastgoed ",
-        },
+        "file": ASSET_FILE,
+        "settings": ASSET_SETTINGS,
+        "sheets": ASSET_SHEETS,
     },
     "yield": {
-        "file": DATA_DIR / "Flags & Frictions - Ultimo 2025 - Swaprente.xlsx",
+        "file": SWAP_FILE,
         "projection_years": 60,
         "tenor_years": 120,
         "sheet_template": "NOM {year}",
         "first_sheet_year": 0,
-        "settings": {
-            "skiprows": 3,
-            "nrows": 2000,
-            "usecols": "C:DR",
-            "header": None,
-        },
+        "settings": CURVE_SETTINGS,
     },
     "bei": {
-        "file": DATA_DIR / "Flags & Frictions - Ultimo 2025 - BEI.xlsx",
+        "file": BEI_FILE,
         "projection_years": 60,
         "tenor_years": 120,
         "sheet_template": "BEI {year}",
         "first_sheet_year": 0,
-        "settings": {
-            "skiprows": 3,
-            "nrows": 2000,
-            "usecols": "C:DR",
-            "header": None,
-        },
+        "settings": CURVE_SETTINGS,
     },
 }
-
-LIFECYCLE_ASSETS = ("Euro_Staat", "Euro_ILBs", "Aandelen")

@@ -14,6 +14,20 @@ dependencies = [
     "yfinance",
 ]
 
+[project.optional-dependencies]
+solver = [
+    "cvxpy",
+]
+gurobi = [
+    "cvxpy",
+    "gurobipy",
+]
+notebook = [
+    "cvxpy",
+    "gurobipy",
+    "matplotlib",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
