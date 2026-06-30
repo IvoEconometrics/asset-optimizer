@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from configs.ultimo_2025 import ASSET_SHEETS
+from configs.ultimo_2025 import ASSET_SHEETS as BASE_ASSET_SHEETS
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +25,12 @@ CURVE_SETTINGS = {
     "usecols": "C:AF",
     "header": None,
 }
+
+ASSET_SHEETS = {}
+for asset_name, sheet_name in BASE_ASSET_SHEETS.items():
+    ASSET_SHEETS[asset_name] = sheet_name
+    if asset_name == "Cash":
+        ASSET_SHEETS["Direct Lending Europa"] = "8. Rendement Direct Lending Eur"
 
 SCENARIO_CONFIG = {
     "horizon_years": 30,

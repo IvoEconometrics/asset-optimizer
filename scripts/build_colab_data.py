@@ -16,6 +16,8 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "colab"
 ASSET_OUTPUT = OUTPUT_DIR / "ultimo_2025_assets_30y.xlsx"
 SWAP_OUTPUT = OUTPUT_DIR / "ultimo_2025_swap_30y.xlsx"
 BEI_OUTPUT = OUTPUT_DIR / "ultimo_2025_bei_30y.xlsx"
+DIRECT_LENDING_FILE = PROJECT_ROOT / "data" / "60_jaars_Flags & Frictions_Dec25.xlsx"
+DIRECT_LENDING_SHEET = "8. Rendement Direct Lending Eur"
 
 YEARS = 30
 SCENARIOS = 2000
@@ -32,6 +34,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 print(f"Writing {ASSET_OUTPUT}")
 source_wb = load_workbook(ASSET_FILE, read_only=True, data_only=True)
+direct_lending_wb = load_workbook(DIRECT_LENDING_FILE, read_only=True, data_only=True)
 target_wb = Workbook(write_only=True)
 
 asset_sheet_names = ["Table of contents", *dict.fromkeys(ASSET_SHEETS.values())]
@@ -48,8 +51,21 @@ for sheet_name in asset_sheet_names:
     ):
         target_ws.append(row)
 
+    if sheet_name == ASSET_SHEETS["Cash"]:
+        source_ws = direct_lending_wb[DIRECT_LENDING_SHEET]
+        target_ws = target_wb.create_sheet(DIRECT_LENDING_SHEET)
+        for row in source_ws.iter_rows(
+            min_row=1,
+            max_row=ASSET_SKIPROWS + SCENARIOS,
+            min_col=1,
+            max_col=MAX_COLUMN,
+            values_only=True,
+        ):
+            target_ws.append(row)
+
 target_wb.save(ASSET_OUTPUT)
 source_wb.close()
+direct_lending_wb.close()
 print(f"Saved {ASSET_OUTPUT} ({ASSET_OUTPUT.stat().st_size / 1024 / 1024:.1f} MB)")
 
 
